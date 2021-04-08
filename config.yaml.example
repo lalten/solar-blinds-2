@@ -1,0 +1,31 @@
+commands:
+  base: &blinds_livingroom_base
+    pid: 85
+    oid: 0x4c00007
+    did: 0x20388b5
+  up: &blinds_livingroom_up
+    <<: *blinds_livingroom_base
+    value: 4
+  down: &blinds_livingroom_down
+    <<: *blinds_livingroom_base
+    value: 5
+
+configuration:
+  connection:
+    server: "http://example.com:8080"
+  login:
+    username: "Searle"
+    password: "Sunshine"
+  observer:
+    latitude: 48.13
+    longitude: 11.57
+  events:
+    SUNRISE:
+      delay_s: -1800
+      commands:
+        - *blinds_livingroom_up
+    SUNSET:
+      delay_s: 1800
+      commands:
+        - *blinds_livingroom_down
+
