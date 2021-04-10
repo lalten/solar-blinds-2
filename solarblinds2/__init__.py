@@ -15,6 +15,8 @@ import requests
 
 import solarblinds2.config as config
 
+_TIME_FUDGE = datetime.timedelta(seconds=1)
+
 
 class Solarblinds2:
     def __init__(
@@ -78,13 +80,13 @@ class Solarblinds2:
             self._config.observer,
             now.date(),
         )
-        if next_sunrise < now:
+        if next_sunrise <= now + _TIME_FUDGE:
             next_sunrise = astral.sun.sunrise(
                 self._config.observer,
                 now.date() + datetime.timedelta(days=1),
             )
         next_sunset = astral.sun.sunset(self._config.observer)
-        if next_sunset < now:
+        if next_sunset <= now + _TIME_FUDGE:
             next_sunset = astral.sun.sunset(
                 self._config.observer,
                 now.date() + datetime.timedelta(days=1),
