@@ -4,6 +4,7 @@ import datetime
 import json
 import logging
 import pathlib
+from solarblinds2.events import get_next_sun_event_time_and_type
 import typing
 from dataclasses import asdict
 
@@ -72,42 +73,10 @@ class Solarblinds2:
             raise RuntimeError(f"Command failed: {json}")
         logging.debug(json)
 
-    def _get_next_event_time_and_type(
-        self,
-    ) -> typing.Tuple[datetime.datetime, config.EventType,]:
-        now = datetime.datetime.now(datetime.timezone.utc)
-        next_sunrise = astral.sun.sunrise(
-            self._config.observer,
-            now.date(),
-        )
-        if next_sunrise <= now + _TIME_FUDGE:
-            next_sunrise = astral.sun.sunrise(
-                self._config.observer,
-                now.date() + datetime.timedelta(days=1),
-            )
-        next_sunset = astral.sun.sunset(self._config.observer)
-        if next_sunset <= now + _TIME_FUDGE:
-            next_sunset = astral.sun.sunset(
-                self._config.observer,
-                now.date() + datetime.timedelta(days=1),
-            )
-        if next_sunrise < next_sunset:
-            next_event_type = config.EventType.SUNRISE
-            next_event_time = next_sunrise
-        else:
-            next_event_time = next_sunset
-            next_event_type = config.EventType.SUNSET
-        return (
-            next_event_time,
-            next_event_type,
-        )
-
     def run(self) -> None:
+        wakeup = datetime.datetime.now(datetime.timezone.utc)
         while True:
-            (
-                next_event_time,
-                next_event_type,
-            ) = self._get_next_event_time_and_type()
+            next_event_time, next_event_type = get_next_sun_event_time_and_type(self._config.observer, wakeup)
             next_event = self._config.events[next_event_type]
             wakeup = next_event_time + next_event.delay
             logging.info(
