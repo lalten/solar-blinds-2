@@ -76,7 +76,9 @@ class Solarblinds2:
     def run(self) -> None:
         wakeup = datetime.datetime.now(datetime.timezone.utc)
         while True:
-            next_event_time, next_event_type = get_next_sun_event_time_and_type(self._config.observer, wakeup)
+            now = datetime.datetime.now(datetime.timezone.utc)
+            check_time = max(now, wakeup)
+            next_event_time, next_event_type = get_next_sun_event_time_and_type(self._config.observer, check_time)
             next_event = self._config.events[next_event_type]
             wakeup = next_event_time + next_event.delay
             logging.info(
@@ -85,6 +87,7 @@ class Solarblinds2:
                 wakeup.astimezone(),
                 next_event.commands,
             )
+            assert wakeup >= now, "Logic error in pause calculation!"
             pause.until(wakeup)
             for command in next_event.commands:
                 self._do_command(command)
