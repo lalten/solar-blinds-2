@@ -106,7 +106,7 @@ class Solarblinds2:
 )
 def cli(debug: bool, config_file: str):
     if debug:
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.DEBUG, format=f"[%(asctime)s] {logging.BASIC_FORMAT}")
     logging.debug(
         "Loading configuration from %s",
         config_file,
