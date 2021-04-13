@@ -1,6 +1,5 @@
 import datetime
 from solarblinds2.events import get_next_sun_event_time_and_type
-from unittest import mock
 import astral
 import solarblinds2.config
 
@@ -36,4 +35,3 @@ def test_get_next_sun_event_time_and_type_close_to_event() -> None:
     date, type = get_next_sun_event_time_and_type(observer, now)
     assert date == datetime.datetime(2000, 1, 1, 16, 0, 49, 698951, tzinfo=datetime.timezone.utc)
     assert type == solarblinds2.config.EventType.SUNSET
-

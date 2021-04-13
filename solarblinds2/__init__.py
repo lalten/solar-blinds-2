@@ -8,15 +8,16 @@ from solarblinds2.events import get_next_sun_event_time_and_type
 import typing
 from dataclasses import asdict
 
-import astral
-import astral.sun
+import time
 import click
-import pause
 import requests
 
 import solarblinds2.config as config
 
-_TIME_FUDGE = datetime.timedelta(seconds=1)
+
+def pause_until(wakeup: datetime.datetime) -> None:
+    while wakeup.timestamp() > time.time():
+        time.sleep((wakeup.timestamp() - time.time()) / 2)
 
 
 class Solarblinds2:
@@ -26,6 +27,9 @@ class Solarblinds2:
     ) -> None:
         self._config = config
         self._session = self._get_session_by_login()
+
+    def _is_running(self) -> bool:
+        return True
 
     def _get_session_by_login(
         self,
@@ -73,22 +77,22 @@ class Solarblinds2:
             raise RuntimeError(f"Command failed: {json}")
         logging.debug(json)
 
+    def _get_next_wakeup_and_event(
+        self, next_wakeup: datetime.datetime
+    ) -> typing.Tuple[datetime.datetime, config.Event]:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        check_time = max(now, next_wakeup)
+        next_event_time, next_event_type = get_next_sun_event_time_and_type(self._config.observer, check_time)
+        next_event = self._config.events[next_event_type]
+        next_wakeup = next_event_time + next_event.delay
+        return next_wakeup, next_event
+
     def run(self) -> None:
-        wakeup = datetime.datetime.now(datetime.timezone.utc)
-        while True:
-            now = datetime.datetime.now(datetime.timezone.utc)
-            check_time = max(now, wakeup)
-            next_event_time, next_event_type = get_next_sun_event_time_and_type(self._config.observer, check_time)
-            next_event = self._config.events[next_event_type]
-            wakeup = next_event_time + next_event.delay
-            logging.info(
-                "Pause until %s at %s, where commands %s will be executed",
-                next_event_type,
-                wakeup.astimezone(),
-                next_event.commands,
-            )
-            assert wakeup >= now, "Logic error in pause calculation!"
-            pause.until(wakeup)
+        next_wakeup = datetime.datetime.now(datetime.timezone.utc)
+        while self._is_running():
+            next_wakeup, next_event = self._get_next_wakeup_and_event(next_wakeup)
+            logging.info("Pause until %s at %s", next_event, next_wakeup.astimezone())
+            pause_until(next_wakeup)
             for command in next_event.commands:
                 self._do_command(command)
 
