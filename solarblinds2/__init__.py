@@ -59,19 +59,20 @@ class Solarblinds2:
 
     def _get_next_wakeup_and_event(
         self, next_wakeup: datetime.datetime
-    ) -> typing.Tuple[datetime.datetime, config.Event]:
+    ) -> typing.Tuple[datetime.datetime, datetime.datetime, config.Event]:
         now = datetime.datetime.now(datetime.timezone.utc)
         check_time = max(now, next_wakeup)
         next_event_time, next_event_type = get_next_sun_event_time_and_type(self._config.observer, check_time)
         next_event = self._config.events[next_event_type]
         next_wakeup = next_event_time + next_event.delay
-        return next_wakeup, next_event
+        next_check_time = next_event_time
+        return next_wakeup, next_check_time, next_event
 
     def run(self) -> None:
-        next_wakeup = datetime.datetime.now(datetime.timezone.utc)
+        next_check_time = datetime.datetime.now(datetime.timezone.utc)
         while self._is_running():
-            next_wakeup, next_event = self._get_next_wakeup_and_event(next_wakeup)
-            logging.info("Pause until %s at %s", next_event, next_wakeup)
+            next_wakeup, next_check_time, next_event = self._get_next_wakeup_and_event(next_check_time)
+            logging.info("Pause until %s at %s. Next check is at %s", next_event, next_wakeup, next_check_time)
             pause_until(next_wakeup)
             for command in next_event.commands:
                 self._do_command(command)

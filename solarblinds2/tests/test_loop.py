@@ -17,6 +17,7 @@ class MockTime:
 
 @mock.patch("time.time", MockTime(datetime.datetime.now()))
 @mock.patch("time.sleep", mock.Mock())
+@mock.patch("solarblinds2.pause_until", mock.Mock())
 @mock.patch("solarblinds2.Solarblinds2._get_session_by_login", mock.Mock())
 @mock.patch("solarblinds2.Solarblinds2._is_running", mock.Mock(side_effect=[True] * 5 + [False]))
 @mock.patch("solarblinds2.Solarblinds2._do_command")
@@ -33,10 +34,10 @@ def test_loop(do_command_mock: mock.MagicMock) -> None:
 
     do_command_mock.assert_has_calls(
         [
-            mock.call(config.CommandData(pid=1, oid=0, did=0, value=0)),
             mock.call(config.CommandData(pid=2, oid=0, did=0, value=0)),
             mock.call(config.CommandData(pid=1, oid=0, did=0, value=0)),
             mock.call(config.CommandData(pid=2, oid=0, did=0, value=0)),
             mock.call(config.CommandData(pid=1, oid=0, did=0, value=0)),
+            mock.call(config.CommandData(pid=2, oid=0, did=0, value=0)),
         ]
     )
